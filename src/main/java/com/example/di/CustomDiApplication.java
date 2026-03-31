@@ -10,7 +10,8 @@ public class CustomDiApplication {
         System.out.println("=================================================");
         
         CustomApplicationContext context = new CustomApplicationContext(CustomDiApplication.class);
-        
+
+        //till here, beans are created and DI is done.  Now we can use those beans.
         System.out.println("\n-------------------------------------------------");
         System.out.println("                Application Logic                ");
         System.out.println("-------------------------------------------------");

@@ -15,13 +15,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CustomApplicationContext {
+    //when bean is created it is stored in this map
+    //key : .class object, Value : actual bean object
     private final Map<Class<?>, Object> beanFactory = new HashMap<>();
 
+
+    //1 constructor called
     public CustomApplicationContext(Class<?> configClass) {
         try {
+            //2. get package of class and then start on calling methods to scan
             String basePackage = configClass.getPackage().getName();
             scanAndInstantiate(basePackage);
             injectDependencies();
+            //
             invokePostConstruct();
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize Custom DI Container", e);
@@ -30,8 +36,10 @@ public class CustomApplicationContext {
 
     private void scanAndInstantiate(String basePackage) throws Exception {
         String path = basePackage.replace('.', '/');
+        //to getparent folder's url from classloader at given path in target. Enum has only one entry , which is root URL of compiled classes in target for this packege.
         Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(path);
-        
+
+        // URL (Uniform Resource Locator) is a Java class that represents a reference to a resource, such as a file, directory, or web address. It encapsulates details like the protocol (e.g., file, http, jar), host, path, and other components.
         while (resources.hasMoreElements()) {
             URL resource = resources.nextElement();
             File directory = Paths.get(resource.toURI()).toFile();
@@ -41,6 +49,7 @@ public class CustomApplicationContext {
         }
     }
 
+    //scanning all files recursively using java file IO .
     private void scanDirectory(File directory, String packageName) throws Exception {
         File[] files = directory.listFiles();
         if (files == null) return;
@@ -51,6 +60,8 @@ public class CustomApplicationContext {
             } else if (file.getName().endsWith(".class")) {
                 String className = packageName + "." + file.getName().substring(0, file.getName().length() - 6);
                 Class<?> clazz = Class.forName(className);
+                //using reflection if this class has annotation @component.
+                // If yes, then creating its object and putting it in bean factory map.
                 if (clazz.isAnnotationPresent(Component.class)) {
                     Object instance = clazz.getDeclaredConstructor().newInstance();
                     beanFactory.put(clazz, instance);
@@ -61,6 +72,7 @@ public class CustomApplicationContext {
     }
 
     private void injectDependencies() throws Exception {
+        //for all beans in bean factory , check which has @Autowired annotation and then set object's autowired field using reflection
         for (Object bean : beanFactory.values()) {
             for (Field field : bean.getClass().getDeclaredFields()) {
                 if (field.isAnnotationPresent(Autowired.class)) {
@@ -93,6 +105,9 @@ public class CustomApplicationContext {
         return clazz.cast(beanFactory.get(clazz));
     }
 
+
+
+    //when context is called, what you need to do (like calling pre-destroy etc ) is written here
     public void close() {
         for (Object bean : beanFactory.values()) {
             for (Method method : bean.getClass().getDeclaredMethods()) {
