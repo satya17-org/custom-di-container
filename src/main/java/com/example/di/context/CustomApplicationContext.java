@@ -1,7 +1,9 @@
 package com.example.di.context;
 
 import com.example.di.annotations.Autowired;
+import com.example.di.annotations.Bean;
 import com.example.di.annotations.Component;
+import com.example.di.annotations.Configuration;
 import com.example.di.annotations.PostConstruct;
 import com.example.di.annotations.PreDestroy;
 
@@ -66,6 +68,19 @@ public class CustomApplicationContext {
                     Object instance = clazz.getDeclaredConstructor().newInstance();
                     beanFactory.put(clazz, instance);
                     System.out.println("[Container] Instantiated Bean: " + clazz.getSimpleName());
+                } else if (clazz.isAnnotationPresent(Configuration.class)) {
+                    Object configInstance = clazz.getDeclaredConstructor().newInstance();
+                    beanFactory.put(clazz, configInstance);
+                    System.out.println("[Container] Instantiated Configuration: " + clazz.getSimpleName());
+                    
+                    for (Method method : clazz.getDeclaredMethods()) {
+                        if (method.isAnnotationPresent(Bean.class)) {
+                            Object beanInstance = method.invoke(configInstance);
+                            Class<?> returnType = method.getReturnType();
+                            beanFactory.put(returnType, beanInstance);
+                            System.out.println("[Container] Instantiated @Bean: " + returnType.getSimpleName());
+                        }
+                    }
                 }
             }
         }

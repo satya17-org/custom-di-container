@@ -23,6 +23,13 @@ public class CustomDiApplication {
             System.err.println("Could not retrieve Car bean from Container!");
         }
 
+        com.example.di.beans.Radio radio = context.getBean(com.example.di.beans.Radio.class);
+        if (radio != null) {
+            radio.play();
+        } else {
+            System.err.println("Could not retrieve Radio bean from Container!");
+        }
+
         System.out.println("\n=================================================");
         System.out.println("          Shutting Down Custom Container         ");
         System.out.println("=================================================");
